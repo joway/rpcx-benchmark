@@ -59,13 +59,20 @@ func main() {
 	// 每个goroutine的耗时记录
 	d := make([][]int64, n, n)
 
-	client := hello.MustNewClient("echo",
-		client.WithHostPorts(servers...),
-		client.WithMuxConnection(*pool),
-	)
-	// warmup
-	for j := 0; j < 5*(*pool); j++ {
-		client.Say(context.Background(), args)
+	// 创建客户端连接池
+	var clientIndex uint64
+	poolClients := make([]hello.Client, 0, *pool)
+	for i := 0; i < *pool; i++ {
+		// warmup
+		client := hello.MustNewClient("echo",
+			client.WithHostPorts(servers...),
+			client.WithMuxConnection(1),
+		)
+		// warmup
+		for j := 0; j < 5; j++ {
+			client.Say(context.Background(), args)
+		}
+		poolClients = append(poolClients, client)
 	}
 
 	// 栅栏，控制客户端同时开始测试
@@ -91,7 +98,8 @@ func main() {
 				}
 
 				t := time.Now().UnixNano()
-
+				ci := atomic.AddUint64(&clientIndex, 1) % uint64(*pool)
+				client := poolClients[int(ci)]
 				reply, err := client.Say(context.Background(), args)
 				t = time.Now().UnixNano() - t // 等待时间+服务时间，等待时间是客户端调度的等待时间以及服务端读取请求、调度的时间，服务时间是请求被服务处理的实际时间
 
@@ -105,7 +113,6 @@ func main() {
 				wg.Done()
 			}
 		}(i)
-
 	}
 
 	wg.Wait()
