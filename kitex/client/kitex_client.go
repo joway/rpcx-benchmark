@@ -2,17 +2,15 @@ package main
 
 import (
 	"flag"
-	"reflect"
+	"github.com/rpcxio/rpcx-benchmark/kitex/pb/hello"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/cloudwego/kitex/client"
-	"github.com/gogo/protobuf/proto"
 	benchmark "github.com/rpcxio/rpcx-benchmark"
-	"github.com/rpcxio/rpcx-benchmark/kitex/pb"
-	"github.com/rpcxio/rpcx-benchmark/kitex/pb/hello"
+	pb "github.com/rpcxio/rpcx-benchmark/proto"
 	"github.com/smallnest/rpcx/log"
 	"go.uber.org/ratelimit"
 	"golang.org/x/net/context"
@@ -43,10 +41,10 @@ func main() {
 	servers := strings.Split(*host, ",")
 	log.Infof("Servers: %+v\n\n", *host)
 
-	args := prepareArgs()
+	args := pb.PrepareArgs()
 
 	// 请求消息大小
-	b, _ := proto.Marshal(args)
+	b, _ := args.Marshal()
 	log.Infof("message size: %d bytes\n\n", len(b))
 
 	// 等待所有测试完成
@@ -66,7 +64,7 @@ func main() {
 		client.WithMuxConnection(*pool),
 	)
 	// warmup
-	for j := 0; j < 5; j++ {
+	for j := 0; j < 5*(*pool); j++ {
 		client.Say(context.Background(), args)
 	}
 
@@ -99,7 +97,7 @@ func main() {
 
 				d[i] = append(d[i], t)
 
-				if err == nil && reply.Field1 != nil && *reply.Field1 == "OK" {
+				if err == nil && reply.Field1 == "OK" {
 					atomic.AddUint64(&transOK, 1)
 				}
 
@@ -114,46 +112,4 @@ func main() {
 
 	// 统计
 	benchmark.Stats(startTime, *total, d, trans, transOK)
-}
-
-func prepareArgs() *pb.BenchmarkMessage {
-	b := true
-	var i int32 = 100000
-	var i64 int64 = 100000
-	s := "许多往事在眼前一幕一幕，变的那麼模糊"
-
-	var args pb.BenchmarkMessage
-
-	v := reflect.ValueOf(&args).Elem()
-	num := v.NumField()
-	for k := 0; k < num; k++ {
-		field := v.Field(k)
-		if !field.CanSet() {
-			continue
-		}
-
-		if field.Type().Kind() == reflect.Ptr {
-			switch v.Field(k).Type().Elem().Kind() {
-			case reflect.Int, reflect.Int32:
-				field.Set(reflect.ValueOf(&i))
-			case reflect.Int64:
-				field.Set(reflect.ValueOf(&i64))
-			case reflect.Bool:
-				field.Set(reflect.ValueOf(&b))
-			case reflect.String:
-				field.Set(reflect.ValueOf(&s))
-			}
-		} else {
-			switch field.Kind() {
-			case reflect.Int, reflect.Int32, reflect.Int64:
-				field.SetInt(100000)
-			case reflect.Bool:
-				field.SetBool(true)
-			case reflect.String:
-				field.SetString(s)
-			}
-		}
-
-	}
-	return &args
 }

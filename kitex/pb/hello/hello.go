@@ -8,8 +8,7 @@ import (
 
 	"github.com/cloudwego/kitex/client"
 	kitex "github.com/cloudwego/kitex/pkg/serviceinfo"
-	"github.com/rpcxio/rpcx-benchmark/kitex/pb"
-	"google.golang.org/protobuf/proto"
+	pb "github.com/rpcxio/rpcx-benchmark/proto"
 )
 
 func serviceInfo() *kitex.ServiceInfo {
@@ -65,12 +64,12 @@ func (p *SayArgs) Marshal(out []byte) ([]byte, error) {
 	if !p.IsSetReq() {
 		return out, fmt.Errorf("No req in SayArgs")
 	}
-	return proto.Marshal(p.Req)
+	return p.Req.Marshal()
 }
 
 func (p *SayArgs) Unmarshal(in []byte) error {
 	msg := new(pb.BenchmarkMessage)
-	if err := proto.Unmarshal(in, msg); err != nil {
+	if err := msg.Unmarshal(in); err != nil {
 		return err
 	}
 	p.Req = msg
@@ -100,12 +99,12 @@ func (p *SayResult) Marshal(out []byte) ([]byte, error) {
 	if !p.IsSetSuccess() {
 		return out, fmt.Errorf("No req in SayResult")
 	}
-	return proto.Marshal(p.Success)
+	return p.Success.Marshal()
 }
 
 func (p *SayResult) Unmarshal(in []byte) error {
 	msg := new(pb.BenchmarkMessage)
-	if err := proto.Unmarshal(in, msg); err != nil {
+	if err := msg.Unmarshal(in); err != nil {
 		return err
 	}
 	p.Success = msg

@@ -2,14 +2,14 @@ package main
 
 import (
 	"flag"
+	"github.com/rpcxio/rpcx-benchmark/kitex/pb/hello"
 	"net"
 	"runtime"
 	"strconv"
 	"time"
 
 	"github.com/cloudwego/kitex/server"
-	"github.com/rpcxio/rpcx-benchmark/kitex/pb"
-	"github.com/rpcxio/rpcx-benchmark/kitex/pb/hello"
+	pb "github.com/rpcxio/rpcx-benchmark/proto"
 	"github.com/smallnest/rpcx/log"
 	"golang.org/x/net/context"
 )
@@ -24,8 +24,8 @@ type Hello struct{}
 func (t *Hello) Say(ctx context.Context, args *pb.BenchmarkMessage) (reply *pb.BenchmarkMessage, err error) {
 	s := "OK"
 	var i int32 = 100
-	args.Field1 = &s
-	args.Field2 = &i
+	args.Field1 = s
+	args.Field2 = i
 	if *delay > 0 {
 		time.Sleep(*delay)
 	} else {

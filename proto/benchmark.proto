@@ -4,6 +4,10 @@ package proto;
 
 option optimize_for = SPEED;
 
+service Hello {
+  // Sends a greeting
+  rpc Say (BenchmarkMessage) returns (BenchmarkMessage) {}
+}
 
 message BenchmarkMessage {
   required string field1 = 1;
